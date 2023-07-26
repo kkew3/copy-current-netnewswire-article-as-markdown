@@ -10,3 +10,8 @@
 - macOS, Alfred 5 with Powerpack
 - [`pandoc`](https://pandoc.org)
 - [`NetNewsWire`](https://netnewswire.com)
+
+# Installation
+
+1. Clone this repo.
+2. Double-click `rss_as_markdown.alfredworkflow`.
