@@ -45,7 +45,9 @@ def text_fix(text: str):
     text = re.sub(r'\[(.+?)\]\{\.math\}', repl_inline_math, text)
     text = re.sub(r'::: math\n(.+?)\n:::', repl_block_math, text, flags=re.DOTALL)
     text = re.sub(r'::: highlight\n(.+?):::', repl_block_code, text, flags=re.DOTALL)
+    text = re.sub(r'::: style\n(.+?):::', r'\1', text, flags=re.DOTALL)
     text = text.replace("\\'", "'")
+    text = text.replace('\\"', '"')
     return text
 
 
@@ -67,7 +69,7 @@ def test_text_fix():
 def generate_article(article_data: dict):
     md = text_fix(request_pandoc(article_data['html']).strip())
     link = article_data['link']
-    author = article_data['author']
+    author = ' and '.join(article_data['authors'])
     published = article_data['date']
     title = article_data['title']
 

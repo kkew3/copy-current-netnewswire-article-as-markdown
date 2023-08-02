@@ -9,7 +9,11 @@ on run
 	set toFile to POSIX file (cacheDir & "/curr_data.json")
 	tell application "NetNewsWire"
 		tell current article
-			set currArticleData to {|title|:title, link:url, |author|:name of the first item of authors, |date|:published date as text, |html|:html}
+			set theAuthorNames to {}
+			if exists authors then
+				set theAuthorNames to name of every author
+			end if
+			set currArticleData to {|title|:title, link:url, |authors|:theAuthorNames, |date|:published date as text, |html|:html}
 		end tell
 	end tell
 	set theJSONData to NSJSONSerialization's dataWithJSONObject:currArticleData options:NSJSONWritingPrettyPrinted |error|:(missing value)
