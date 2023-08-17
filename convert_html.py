@@ -104,8 +104,9 @@ class KeepOnlySupportedTarget:
         self.active = False
 
     def start(self, tag, attrib):
-        # the separator
         self.active = True
+        tag = tag.lower()
+        # the separator
         if tag == 'hr':
             self.nodes.append(StartElement(tag))
             self.stack.append(tag)
@@ -145,6 +146,10 @@ class KeepOnlySupportedTarget:
             self.stack.append(tag)
         # basic text layout
         elif tag in ['b', 'strong', 'i', 'em', 'mark', 'del', 's']:
+            self.nodes.append(StartElement(tag))
+            self.stack.append(tag)
+        # sub and sup
+        elif tag in ['sub', 'sup']:
             self.nodes.append(StartElement(tag))
             self.stack.append(tag)
         # code blocks
@@ -791,6 +796,22 @@ class StackMarkdownGenerator:
         'strong_symbol': '*',
         # symbol for <em> or <i>; valid values: '*', '_'
         'em_symbol': '_',
+        # character(s) to insert before <sub>; may be empty string;
+        # wherein whitespace characters are treated as ``Whitespace`` and
+        # others as ``VerbText``
+        'sub_start_symbol': ' ',
+        # character(s) to insert after </sub>; may be empty string;
+        # wherein whitespace characters are treated as ``Whitespace`` and
+        # others as ``VerbText``
+        'sub_end_symbol': ' ',
+        # character(s) to insert before <sup>; may be empty string;
+        # wherein whitespace characters are treated as ``Whitespace`` and
+        # others as ``VerbText``
+        'sup_start_symbol': ' ',
+        # character(s) to insert after </sup>; may be empty string;
+        # wherein whitespace characters are treated as ``Whitespace`` and
+        # others as ``VerbText``
+        'sup_end_symbol': ' ',
         # if `True`, try to join lines in <li> and <p>
         'join_lines_when_possible': False,
         # if not `None`, try to make the highest header level be that high;
@@ -1176,10 +1197,17 @@ class StackMarkdownGenerator:
         if contains_unparsed_element(elements):
             return None
         res = as_text(elements, 'pass')
-        res = [
-            '{} '.format(self.options['ul_bullet']) if isinstance(
-                e, MdListItemBullet) else e for e in res
-        ]
+
+        bullet_char = self.options['ul_bullet']
+        if bullet_char not in ['-', '*', '+']:
+            raise ValueError('invalid <ul> bullet: {}'.format(bullet_char))
+
+        def sub_ul_bullet_rule(e1, e2):
+            if isinstance(e2, MdListItemBullet):
+                return [e1, VerbText(bullet_char), Space()]
+            return None
+
+        res = stack_merge(res, sub_ul_bullet_rule)
 
         stop_on_mdlist = functools.partial(stop_merging_on_seen, MdList())
 
@@ -1404,6 +1432,56 @@ class StackMarkdownGenerator:
         return res
 
     proc_s = proc_del
+
+    def proc_sub(
+        self,
+        _attrib: ty.Dict[str, str],
+        elements: ty.List[IntermediateElementType],
+        _parents: ty.List[StartElement],
+    ) -> ty.Optional[ty.List[IntermediateElementType]]:
+        if contains_unparsed_element(elements):
+            return None
+
+        def handle_sub_symbol(
+                symbol: str) -> ty.List[ty.Union[VerbText, Whitespace]]:
+            texts = recognize_whitespace(symbol)
+            texts = filter(None, texts)
+            return [VerbText(e) if isinstance(e, str) else e for e in texts]
+
+        sub_start = self.options['sub_start_symbol']
+        sub_end = self.options['sub_end_symbol']
+        res = []
+        if sub_start:
+            res.extend(handle_sub_symbol(sub_start))
+        res.extend(elements)
+        if sub_end:
+            res.extend(handle_sub_symbol(sub_end))
+        return as_text(res, 'pass')
+
+    def proc_sup(
+        self,
+        _attrib: ty.Dict[str, str],
+        elements: ty.List[IntermediateElementType],
+        _parents: ty.List[StartElement],
+    ) -> ty.Optional[ty.List[IntermediateElementType]]:
+        if contains_unparsed_element(elements):
+            return None
+
+        def handle_sup_symbol(
+                symbol: str) -> ty.List[ty.Union[VerbText, Whitespace]]:
+            texts = recognize_whitespace(symbol)
+            texts = filter(None, texts)
+            return [VerbText(e) if isinstance(e, str) else e for e in texts]
+
+        sup_start = self.options['sup_start_symbol']
+        sup_end = self.options['sup_end_symbol']
+        res = []
+        if sup_start:
+            res.extend(handle_sup_symbol(sup_start))
+        res.extend(elements)
+        if sup_end:
+            res.extend(handle_sup_symbol(sup_end))
+        return as_text(res, 'pass')
 
     def proc_td(
         self,
@@ -1725,6 +1803,14 @@ def _make_parser():
         '--strong-symbol', dest='strong_symbol', choices=['*', '_'])
     args.add_argument('--em-symbol', dest='em_symbol', choices=['*', '_'])
     args.add_argument(
+        '--sub-start-symbol', dest='sub_start_symbol', metavar='CHARS')
+    args.add_argument(
+        '--sub-end-symbol', dest='sub_end_symbol', metavar='CHARS')
+    args.add_argument(
+        '--sup-start-symbol', dest='sup_start_symbol', metavar='CHARS')
+    args.add_argument(
+        '--sup-end-symbol', dest='sup_end_symbol', metavar='CHARS')
+    args.add_argument(
         '--join', dest='join_lines_when_possible', action='store_true')
     args.add_argument(
         '--elevate-header-to',
@@ -1750,6 +1836,10 @@ def _main():
         'ul_bullet',
         'strong_symbol',
         'em_symbol',
+        'sub_start_symbol',
+        'sub_end_symbol',
+        'sup_start_symbol',
+        'sup_end_symbol',
         'join_lines_when_possible',
         'try_make_highest_header_hn',
         'indent_list_with_tab',
