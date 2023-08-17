@@ -8,10 +8,14 @@
 # Dependencies
 
 - macOS, Alfred 5 with Powerpack
-- [`pandoc`](https://pandoc.org)
+- python3, with [`lxml`](https://lxml.de) installed
 - [`NetNewsWire`](https://netnewswire.com)
 
 # Installation
 
 1. Clone this repo.
 2. Double-click `rss_as_markdown.alfredworkflow`.
+
+# Further reading
+
+Please refer to [this repo](https://github.com/kkew3/html2obsidian) for more about the attached `convert_html.py`.
