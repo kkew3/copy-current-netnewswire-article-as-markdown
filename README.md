@@ -13,7 +13,7 @@
 
 # Installation
 
-1. Clone this repo.
+1. Clone this repo (recursively).
 2. Double-click `rss_as_markdown.alfredworkflow`.
 
 # Further reading

@@ -1,0 +1,3 @@
+[submodule "html2obsidian"]
+	path = html2obsidian
+	url = https://github.com/kkew3/html2obsidian.git
