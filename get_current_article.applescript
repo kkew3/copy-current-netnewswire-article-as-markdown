@@ -5,7 +5,7 @@ property NSJSONWritingPrettyPrinted : a reference to 0
 property NSJSONSerialization : a reference to current application's NSJSONSerialization
 
 on run
-	set cacheDir to system attribute "cachedir"
+	set cacheDir to system attribute "alfred_workflow_cache"
 	set toFile to POSIX file (cacheDir & "/curr_data.json")
 	tell application "NetNewsWire"
 		tell current article

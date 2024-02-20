@@ -8,7 +8,9 @@ import convert_html
 
 
 def get_data_json():
-    return Path(os.environ['cachedir']) / 'curr_data.json'
+    cachedir = Path(os.environ['alfred_workflow_cache'])
+    cachedir.mkdir(exist_ok=True)
+    return cachedir / 'curr_data.json'
 
 
 def request_convert_html(html, url):
